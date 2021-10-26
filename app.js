@@ -42,12 +42,18 @@ function findParent(cat) {
 }
 
 function getWeights(cats) {
-  const weighted = ['restaurants', 'food', 'nightlife'];
+  const weighted = [
+    { category: 'restaurants', weight: 2 },
+    { category: 'food', weight: 1.5 },
+    { category: 'nightlife', weight: 1.5 }
+  ];
   let weights = [];
   for (cat of cats) {
-    // cat = findName(cat);
-    const weight = weighted.includes(cat) ? 2 : 1;
-    const categoryExists = weights.find(o => o.category === cat);
+    const weight = weighted.map(o => o.category).includes(cat) ?
+      weighted.find(o => o.category === cat).weight :
+      1;
+
+   const categoryExists = weights.find(o => o.category === cat);
     if (categoryExists && categoryExists.weight) {
       categoryExists.weight + weight;
     }
