@@ -12,7 +12,8 @@ function getWeights(cats) {
   const weighted = [
     { category: 'restaurants', weight: 2 },
     { category: 'food', weight: 1.5 },
-    { category: 'nightlife', weight: 1.5 }
+    { category: 'nightlife', weight: 1.5 },
+    // { category: 'localservices', weight: 0.9 },
   ];
   let weights = [];
   for (cat of cats) {
@@ -69,20 +70,47 @@ function findAliases(str) {
   return cats;
 }
 
+const pipeline = (...fns) => fns.reduce((f, g) => (...args) => g(f(...args)));
+
 (() => {
-  // Medical Centers, Obstetricians & Gynecologists, Adult Education
-  // Private Tutors, Adult Education, Language Schools
-  let string;
-  string = 'Pubs, American (Traditional)';
-  // const cats = findAliases('Kids Activities, Arcades, Pizza')
-  console.log(`String:\t\t${string}`);
-  cats = findAliases(string);
-  console.log(`Categories:\t${cats}`)
-  const parents = getParents(cats);
-  console.log(`Parents:\t${parents}`);
-  const weights = getWeights(parents);
-  console.log(`Weights:`);
-  console.log(weights);
-  const heaviest = getHeaviest(weights);
-  console.log(`Winner:\t${findName(heaviest)}`);
+  const locations = [
+    {
+      name: 'Tryon Public House',
+      categories: 'Bars, Gastropubs, American (Traditional)',
+    },
+    {
+      name: 'Bronx Alehouse',
+      categories: 'Pubs, American (Traditional)',
+    },
+    {
+      name: 'Accent Reduction and ESL for Business',
+      categories: 'Private Tutors, Adult Education, Language Schools',
+    },
+    {
+      name: 'Columbia Ob/Gyn Uptown',
+      categories: 'Medical Centers, Obstetricians & Gynecologists, Adult Education'
+    },
+    {
+      name: 'Glam House Bx',
+      categories: 'Party & Event Planning, Venues & Event Spaces, Party Equipment Rentals'
+    },
+    {
+      name: 'Lincoln Technical Institute - Queens',
+      categories: 'Colleges & Universities, Adult Education, Vocational & Technical School'
+    },
+    {
+      name: 'Samuel Field Y',
+      categories: 'Preschools, Community Service/Non-Profit, Child Care & Day Care'
+    },
+    {
+      name: 'Bohemian Hall & Beer Garden',
+      categories: 'Beer Gardens, Venues & Event Spaces',
+    },
+  ]
+  for (location of locations) {
+    console.log(`Name:\t\t${location.name}`);
+    console.log(`Categories:\t${location.categories}`);
+    const winner = pipeline(findAliases, getParents, getWeights, getHeaviest)(location.categories);
+    console.log(`Main parent:\t${findName(winner)}\n`);
+  }
 })();
