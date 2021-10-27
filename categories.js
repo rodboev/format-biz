@@ -3,16 +3,17 @@ const categories = require('./categories.json');
 function findParent(cat) {
   const parent = categories.find(o => o.alias === cat).parents;
 	if (parent.length === 0) return cat;
-	if (parent.length === 1) parent.toString();
-  // console.log(`${cat} --> ${parent}`);
+  console.log(`${cat} --> ${parent}`);
+	// if (parent.length === 1) return parent.toString();
   return findParent(parent[0]);
 }
 
 function getWeights(cats) {
   const weighted = [
-    { category: 'restaurants', weight: 2 },
+    { category: 'restaurants', weight: 1.5 },
     { category: 'food', weight: 1.5 },
     { category: 'nightlife', weight: 1.5 },
+    { category: 'venues', weight: 1.5 },
     // { category: 'localservices', weight: 0.9 },
   ];
   let weights = [];
@@ -23,7 +24,7 @@ function getWeights(cats) {
 
    const categoryExists = weights.find(o => o.category === cat);
     if (categoryExists && categoryExists.weight) {
-      categoryExists.weight + weight;
+      categoryExists.weight += weight;
     }
     else {
       weights.push({
@@ -87,10 +88,6 @@ const pipeline = (...fns) => fns.reduce((f, g) => (...args) => g(f(...args)));
       categories: 'Private Tutors, Adult Education, Language Schools',
     },
     {
-      name: 'Columbia Ob/Gyn Uptown',
-      categories: 'Medical Centers, Obstetricians & Gynecologists, Adult Education'
-    },
-    {
       name: 'Glam House Bx',
       categories: 'Party & Event Planning, Venues & Event Spaces, Party Equipment Rentals'
     },
@@ -105,6 +102,14 @@ const pipeline = (...fns) => fns.reduce((f, g) => (...args) => g(f(...args)));
     {
       name: 'Bohemian Hall & Beer Garden',
       categories: 'Beer Gardens, Venues & Event Spaces',
+    },
+    {
+      name: 'Hotel 64',
+      categories: 'Hotels',
+    },
+    {
+      name: 'Columbia Ob/Gyn Uptown',
+      categories: 'Medical Centers, Obstetricians & Gynecologists, Adult Education'
     },
   ]
   for (location of locations) {
