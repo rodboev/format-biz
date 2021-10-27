@@ -23,8 +23,8 @@ const csvStringifier = createCsvStringifier({
   ],
 });
 
-let readStream = fs.createReadStream("businesses-nyc-filtered.csv");
-let writeStream = fs.createWriteStream("businesses-nyc-filtered-clean.csv");
+let readStream = fs.createReadStream(`businesses-${area}-filtered.csv`);
+let writeStream = fs.createWriteStream(`businesses-${area}-filtered-clean.csv`);
 
 function removeNull(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== "null"));
@@ -36,7 +36,7 @@ class CSVCleaner extends Transform {
   }
 
   _transform(chunk, encoding, next) {
-    if (chunk["location.state"] === "NY" && chunk.display_phone && chunk["location.zip_code"] && chunk["location.zip_code"].length === 5 &&
+    if (chunk["location.state"] === state && chunk.display_phone && chunk["location.zip_code"] && chunk["location.zip_code"].length === 5 &&
         (chunk["location.zip_code"].startsWith("0") || chunk["location.zip_code"].startsWith("1"))
       ) {
       chunk = removeNull(chunk);
