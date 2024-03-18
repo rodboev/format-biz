@@ -17,7 +17,7 @@ function getWeights(cats) {
     // { category: 'localservices', weight: 0.9 },
   ];
   let weights = [];
-  for (cat of cats) {
+  for (const cat of cats) {
     const weight = weighted.map(o => o.category).includes(cat) ?
       weighted.find(o => o.category === cat).weight :
       1;
@@ -38,7 +38,7 @@ function getWeights(cats) {
 
 function getParents(cats) {
   const parents = [];
-  for (cat of cats) {
+  for (const cat of cats) {
     parents.push(findParent(cat));
   }
   return parents;
@@ -65,7 +65,7 @@ function getHeaviest(weights) {
 function findAliases(str) {
   const titles = str.split(', ');
   const cats = [];
-  for (title of titles) {
+  for (const title of titles) {
     cats.push(categories.find(o => o.title === title).alias);
   }
   return cats;
