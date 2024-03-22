@@ -104,8 +104,6 @@ class CSVCleaner extends Transform {
       // chunk.county = counties.find(value => value.zip === chunk["location.zip_code"])?.county;
       const chunkString = csvStringifier.stringifyRecords([chunk]);
       this.push(chunkString);
-      console.log(chunkString); console.log(''); return
-      console.log(chunk); console.log(''); return
     }
     next();
   }
