@@ -27,23 +27,30 @@ let readStream = fs.createReadStream(`businesses-${area}-filtered.csv`);
 let writeStream = fs.createWriteStream(`businesses-${area}-filtered-clean.csv`);
 
 const transformObj = (obj) => {
-  return Object.keys(obj).reduce((acc, key) => {
-   if(key.indexOf('.') >= 0){
-     const [parentKey, childKey] = key.split('.');
-     acc[parentKey] = acc[parentKey] || {};
-     acc[parentKey][childKey] = obj[key];
-   } else {
-     acc[key] = obj[key];
-   }
-   return acc;
-  }, {});
+  Object.keys(obj).forEach(k => {
+    const path = k.replace(/\[/g, '.').replace(/\]/g, '').split('.'),
+      last = path.pop()
+
+    if (path.length) {
+      path.reduce((o, p) => o[p] = o[p] || {}, obj)[last] = obj[k]
+      delete obj[k]
+    }
+  })
+  return obj
 }
 
-const removeNull = (obj) => {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => {
-    v !== "null"
-  }));
+const removeEmpty = (obj) => Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null))
+const removeNull = (obj) => Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== "null"))
+const removeFalsy = (obj) => Object.entries(obj).reduce((a,[k,v]) => (v ? (a[k]=v, a) : a), {})
+
+const isEmpty = (obj) => {
+  for (const i in obj)
+    return false
+  return true
 }
+
+// pipeline(getDir, filterOdt, count)(dirname)
+const pipe = (...fns) => fns.reduce((f, g) => (...args) => g(f(...args)))
 
 class CSVCleaner extends Transform {
   constructor(options) {
@@ -51,10 +58,19 @@ class CSVCleaner extends Transform {
   }
 
   _transform(chunk, encoding, next) {
-    if (chunk["location.state"] === state && chunk.display_phone && chunk["location.zip_code"] && chunk["location.zip_code"].length === 5 &&
-        (chunk["location.zip_code"].startsWith("0") || chunk["location.zip_code"].startsWith("1"))
+    console.log(`object_id: ${chunk["_id"]}`)
+    if (
+      chunk &&
+      !isEmpty(chunk) &&
+      chunk["location.state"] === state &&
+      chunk["display_phone"].length > 0 &&
+      chunk["location.zip_code"] &&
+      chunk["location.zip_code"].length >= 4
       ) {
-      chunk = removeNull();
+      chunk["location.zip_code"].padStart(5, '0') // zips before NY
+      chunk = removeFalsy(chunk)
+      chunk = transformObj(chunk)
+      
       let categories = JSON.parse(chunk.categories).map((x) => { x.title }).reverse().join("|");
       chunk.categories = categories;
       // chunk.county = counties.find(x => x.zip === chunk["location.zip_code"])?.county;
