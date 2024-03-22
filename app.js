@@ -21,6 +21,7 @@ const csvStringifier = createCsvStringifier({
     { id: "coordinates.latitude", title: "latitude" },
     { id: "coordinates.longitude", title: "longitude" },
   ],
+  headerIdDelimiter: '.',
 });
 
 let readStream = fs.createReadStream(`businesses-${area}-filtered.csv`);
@@ -99,10 +100,12 @@ class CSVCleaner extends Transform {
       // chunk.categories = keysToValues(chunk.categories)
       chunk.categories = Object.keys(chunk.categories).map(key => chunk.categories[key])
       chunk.categories = chunk.categories.map(value => value.title).reverse().join('|')
-
+      
       // chunk.county = counties.find(value => value.zip === chunk["location.zip_code"])?.county;
       const chunkString = csvStringifier.stringifyRecords([chunk]);
       this.push(chunkString);
+      console.log(chunkString); console.log(''); return
+      console.log(chunk); console.log(''); return
     }
     next();
   }
