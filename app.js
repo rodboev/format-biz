@@ -27,6 +27,20 @@ let readStream = fs.createReadStream(`businesses-${area}-filtered.csv`);
 let writeStream = fs.createWriteStream(`businesses-${area}-filtered-clean.csv`);
 
 const transformObj = (obj) => {
+  return Object.keys(obj).reduce((acc, key) => {
+    if (key.includes('.')) {
+      const [parentKey, childKey] = key.split('.')
+      acc[parentKey] = acc[parentKey] || {}
+      acc[parentKey][childKey] = obj[key]
+    }
+    else {
+      acc[key] = obj[key]
+    }
+    return acc
+  }, {})
+}
+
+const transformObj2 = (obj) => {
   Object.keys(obj).forEach(k => {
     const path = k.replace(/\[/g, '.').replace(/\]/g, '').split('.'),
       last = path.pop()
@@ -39,15 +53,24 @@ const transformObj = (obj) => {
   return obj
 }
 
+const keysToValues = obj => Object.keys(obj).map(key => obj[key])
+
 const removeEmpty = (obj) => Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null))
 const removeNull = (obj) => Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== "null"))
+
+// https://stackoverflow.com/questions/286141/remove-blank-attributes-from-an-object-in-javascript/57625661#57625661
 const removeFalsy = (obj) => Object.entries(obj).reduce((a,[k,v]) => (v ? (a[k]=v, a) : a), {})
+const cleanEmpty = obj => Object.entries(obj)
+  .map(([k,v])=>[k,v && typeof v === "object" ? cleanEmpty(v) : v])
+  .reduce((a,[k,v]) => (v == null ? a : (a[k]=v, a)), {})
 
 const isEmpty = (obj) => {
   for (const i in obj)
     return false
   return true
 }
+
+const isNum = (str) => /^\d+$/.test(str)
 
 // pipeline(getDir, filterOdt, count)(dirname)
 const pipe = (...fns) => fns.reduce((f, g) => (...args) => g(f(...args)))
@@ -58,22 +81,26 @@ class CSVCleaner extends Transform {
   }
 
   _transform(chunk, encoding, next) {
-    console.log(`object_id: ${chunk["_id"]}`)
+    // console.log(`object_id: ${chunk["_id"]}`)
     if (
       chunk &&
       !isEmpty(chunk) &&
       chunk["location.state"] === state &&
-      chunk["display_phone"].length > 0 &&
-      chunk["location.zip_code"] &&
-      chunk["location.zip_code"].length >= 4
+      chunk["display_phone"] &&
+      chunk["location.zip_code"].length >= 3 &&
+      chunk["location.zip_code"].length <= 5
       ) {
       chunk["location.zip_code"].padStart(5, '0') // zips before NY
+
+      // chunk = removeNull(chunk);
       chunk = removeFalsy(chunk)
-      chunk = transformObj(chunk)
+      chunk = transformObj2(chunk)
       
-      let categories = JSON.parse(chunk.categories).map((x) => { x.title }).reverse().join("|");
-      chunk.categories = categories;
-      // chunk.county = counties.find(x => x.zip === chunk["location.zip_code"])?.county;
+      // chunk.categories = keysToValues(chunk.categories)
+      chunk.categories = Object.keys(chunk.categories).map(key => chunk.categories[key])
+      chunk.categories = chunk.categories.map(value => value.title).reverse().join('|')
+
+      // chunk.county = counties.find(value => value.zip === chunk["location.zip_code"])?.county;
       const chunkString = csvStringifier.stringifyRecords([chunk]);
       this.push(chunkString);
     }
