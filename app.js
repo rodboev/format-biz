@@ -15,7 +15,7 @@ const csvStringifier = createCsvStringifier({
     { id: "location.address2", title: "address2" },
     { id: "location.address3", title: "address3" },
     { id: "location.city", title: "city" },
-    { id: "county", title: "county" },
+    { id: "location.county", title: "county" },
     { id: "location.state", title: "state" },
     { id: "location.zip_code", title: "zip" },
     { id: "coordinates.latitude", title: "latitude" },
@@ -26,8 +26,23 @@ const csvStringifier = createCsvStringifier({
 let readStream = fs.createReadStream(`businesses-${area}-filtered.csv`);
 let writeStream = fs.createWriteStream(`businesses-${area}-filtered-clean.csv`);
 
-function removeNull(obj) {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== "null"));
+const transformObj = (obj) => {
+  return Object.keys(obj).reduce((acc, key) => {
+   if(key.indexOf('.') >= 0){
+     const [parentKey, childKey] = key.split('.');
+     acc[parentKey] = acc[parentKey] || {};
+     acc[parentKey][childKey] = obj[key];
+   } else {
+     acc[key] = obj[key];
+   }
+   return acc;
+  }, {});
+}
+
+const removeNull = (obj) => {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => {
+    v !== "null"
+  }));
 }
 
 class CSVCleaner extends Transform {
@@ -39,8 +54,8 @@ class CSVCleaner extends Transform {
     if (chunk["location.state"] === state && chunk.display_phone && chunk["location.zip_code"] && chunk["location.zip_code"].length === 5 &&
         (chunk["location.zip_code"].startsWith("0") || chunk["location.zip_code"].startsWith("1"))
       ) {
-      chunk = removeNull(chunk);
-      let categories = JSON.parse(chunk.categories).map(x => x.title).reverse().join(", ");
+      chunk = removeNull();
+      let categories = JSON.parse(chunk.categories).map((x) => { x.title }).reverse().join("|");
       chunk.categories = categories;
       // chunk.county = counties.find(x => x.zip === chunk["location.zip_code"])?.county;
       const chunkString = csvStringifier.stringifyRecords([chunk]);
